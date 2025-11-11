@@ -1,30 +1,28 @@
-import { readFile } from 'fs/promises';
+import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
   const { code } = req.query;
-  if (!code) return res.status(400).json({ error: 'No code' });
+  if (!code) return res.status(400).json({error:'Code OAuth tidak ditemukan'});
 
-  const env = await readFile('.env', 'utf-8');
-  const config = {};
-  env.split('\n').forEach(line => {
-    if (line.includes('=')) {
-      const [k, v] = line.split('=');
-      config[k.trim()] = v.trim();
-    }
-  });
+  const CLIENT_ID = process.env.VITE_KICK_CLIENT_ID;
+  const CLIENT_SECRET = process.env.KICK_CLIENT_SECRET;
+  const REDIRECT_URI = process.env.VITE_KICK_REDIRECT_URI;
 
-  const response = await fetch('https://id.kick.com/oauth/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      client_id: config.VITE_KICK_CLIENT_ID,
-      client_secret: config.KICK_CLIENT_SECRET,
-      code,
-      grant_type: 'authorization_code',
-      redirect_uri: config.VITE_KICK_REDIRECT_URI,
-    }),
-  });
-
-  const data = await response.json();
-  res.json(data);
+  try {
+    const response = await fetch('https://kick.com/oauth/token', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        code,
+        grant_type:'authorization_code',
+        redirect_uri:REDIRECT_URI
+      })
+    });
+    const data = await response.json();
+    res.status(200).json(data);
+  } catch(err) {
+    res.status(500).json({error:err.message});
+  }
 }
