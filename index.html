@@ -1,146 +1,236 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kick Bot Padang</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', sans-serif; }
-    body { background: linear-gradient(135deg,#1e3c72,#2a5298); color:white; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;}
-    .card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius:20px; padding:30px; width:100%; max-width:400px; box-shadow:0 10px 30px rgba(0,0,0,0.3);}
-    h1{text-align:center;margin-bottom:10px;font-size:28px;}
-    p{text-align:center;margin-bottom:20px;opacity:0.9;}
-    input,button{width:100%;padding:14px;margin:10px 0;border:none;border-radius:12px;font-size:16px;}
-    input{background: rgba(255,255,255,0.2); color:white;}
-    input::placeholder{color: rgba(255,255,255,0.7);}
-    button{background:#00d26a;color:white;font-weight:bold;cursor:pointer;transition:0.3s;}
-    button:hover{background:#00b359;}
-    .status{text-align:center;margin-top:15px;font-size:14px;opacity:0.8;}
-    .error{color:#ff6b6b;background: rgba(255,107,107,0.1); padding:10px; border-radius:8px; margin:10px 0; text-align:center;}
-    .commands{margin-top:20px;font-size:13px;text-align:center;}
-    .commands code{background: rgba(0,0,0,0.3); padding:2px 6px;border-radius:4px;}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kick Bot Padang</title>
+<style>
+  /* Reset & font */
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', sans-serif; }
+
+  /* Body & background */
+  body {
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: linear-gradient(135deg,#1e3c72,#2a5298);
+    color:white;
+    padding:20px;
+    overflow-x:hidden;
+  }
+
+  /* Card */
+  .card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(15px);
+    border-radius:25px;
+    padding:40px 30px;
+    max-width:450px;
+    width:100%;
+    box-shadow:0 20px 40px rgba(0,0,0,0.4);
+    text-align:center;
+    animation: fadeIn 1s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    0% { opacity:0; transform: translateY(-20px);}
+    100% { opacity:1; transform: translateY(0);}
+  }
+
+  /* Headings */
+  h1 { font-size:32px; margin-bottom:10px; letter-spacing:1px; }
+  p { margin-bottom:25px; opacity:0.8; font-size:15px; }
+
+  /* Inputs & Buttons */
+  input, button {
+    width:100%;
+    padding:14px;
+    margin:12px 0;
+    border-radius:12px;
+    border:none;
+    font-size:16px;
+    transition:0.3s;
+  }
+
+  input {
+    background: rgba(255,255,255,0.15);
+    color:white;
+  }
+  input::placeholder { color: rgba(255,255,255,0.7); }
+
+  button {
+    background: linear-gradient(90deg,#00d26a,#00b359);
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+    box-shadow:0 6px 15px rgba(0,0,0,0.3);
+  }
+  button:hover {
+    background: linear-gradient(90deg,#00b359,#00d26a);
+    transform: translateY(-2px);
+    box-shadow:0 8px 18px rgba(0,0,0,0.35);
+  }
+
+  /* Status & Error */
+  .status {
+    margin-top:15px;
+    font-size:14px;
+    opacity:0.9;
+    min-height:18px;
+    transition:0.3s;
+  }
+  .error {
+    color:#ff6b6b;
+    background: rgba(255,107,107,0.15);
+    padding:10px;
+    border-radius:8px;
+    margin:12px 0;
+    display:none;
+    font-size:14px;
+    text-align:center;
+  }
+
+  /* Commands display */
+  .commands {
+    margin-top:20px;
+    font-size:13px;
+  }
+  .commands code {
+    background: rgba(0,0,0,0.25);
+    padding:3px 8px;
+    border-radius:4px;
+    margin:0 3px;
+  }
+
+  /* Responsive */
+  @media(max-width:500px){
+    .card { padding:30px 20px; }
+    h1 { font-size:28px; }
+  }
+</style>
 </head>
 <body>
-  <div class="card">
-    <h1>Kick Bot Padang</h1>
-    <p>Bot chat test dari Sumatera Barat</p>
+<div class="card">
+  <h1>Kick Bot Padang</h1>
+  <p>Bot chat interaktif dari Sumatera Barat</p>
 
-    <div id="login">
-      <button onclick="login()">Login dengan Kick</button>
-    </div>
-
-    <div id="bot" style="display:none;">
-      <input type="text" id="channel" placeholder="Masukkan channel kamu" />
-      <button onclick="startBot()">Start Bot</button>
-      <div class="status" id="status">Siap...</div>
-      <div class="commands">
-        Command: <code>!hello</code> | <code>!jam</code> | <code>!padang</code>
-      </div>
-    </div>
-
-    <div id="error" class="error" style="display:none;"></div>
+  <div id="login">
+    <button onclick="login()">Login dengan Kick</button>
   </div>
 
-  <script>
-    // =======================
-    // CONFIGURATION
-    // =======================
-    const CLIENT_ID = "01K9SEDGKEAB4KH7WAJ8Q2XGVD"; // Masukkan Client ID
-    const CLIENT_SECRET = "8fe491a2b6fe3949673e9228d824efb477a90de7425c8b8f8a564ecb039a2225"; // Masukkan Client Secret
-    const REDIRECT_URI = window.location.origin + window.location.pathname; // Bisa pakai halaman ini
+  <div id="bot" style="display:none;">
+    <input type="text" id="channel" placeholder="Masukkan channel kamu" />
+    <button onclick="startBot()">Start Bot</button>
+    <div class="status" id="status">Siap...</div>
+    <div class="commands">
+      Command: <code>!hello</code> | <code>!jam</code> | <code>!padang</code>
+    </div>
+  </div>
 
-    // =======================
-    // Login OAuth
-    // =======================
-    function login() {
-      if (!CLIENT_ID) return showError('Client ID belum diatur!');
-      const params = new URLSearchParams({
-        client_id: CLIENT_ID,
-        redirect_uri: REDIRECT_URI,
-        response_type: 'code',
-        scope: 'chat:read chat:write',
-        state: 'all-in-one-bot',
+  <div id="error" class="error"></div>
+</div>
+
+<script>
+  // =======================
+  // CONFIGURATION
+  // =======================
+  const CLIENT_ID = "01K9SEDGKEAB4KH7WAJ8Q2XGVD"; // Masukkan Client ID
+  const CLIENT_SECRET = "8fe491a2b6fe3949673e9228d824efb477a90de7425c8b8f8a564ecb039a2225"; // Hanya untuk testing
+  const REDIRECT_URI = window.location.origin + window.location.pathname;
+
+  // =======================
+  // Login OAuth
+  // =======================
+  function login() {
+    if (!CLIENT_ID) return showError('Client ID belum diatur!');
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID,
+      redirect_uri: REDIRECT_URI,
+      response_type: 'code',
+      scope: 'chat:read chat:write',
+      state: 'ui-bot',
+    });
+    window.location.href = `https://kick.com/oauth/authorize?${params.toString()}`;
+  }
+
+  // =======================
+  // Tukar code -> token
+  // =======================
+  async function exchangeToken(code) {
+    try {
+      const res = await fetch('https://kick.com/oauth/token', {
+        method: 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({
+          client_id: CLIENT_ID,
+          client_secret: CLIENT_SECRET,
+          code: code,
+          grant_type: 'authorization_code',
+          redirect_uri: REDIRECT_URI
+        })
       });
-      window.location.href = `https://kick.com/oauth/authorize?${params.toString()}`;
-    }
-
-    // =======================
-    // Tukar code -> token
-    // =======================
-    async function exchangeToken(code) {
-      try {
-        const res = await fetch('https://kick.com/oauth/token', {
-          method: 'POST',
-          headers: {'Content-Type':'application/x-www-form-urlencoded'},
-          body: new URLSearchParams({
-            client_id: CLIENT_ID,
-            client_secret: CLIENT_SECRET,
-            code: code,
-            grant_type: 'authorization_code',
-            redirect_uri: REDIRECT_URI
-          })
-        });
-        const data = await res.json();
-        if (data.access_token) {
-          sessionStorage.setItem('kick_token', data.access_token);
-          document.getElementById('login').style.display = 'none';
-          document.getElementById('bot').style.display = 'block';
-          document.getElementById('status').textContent = 'Login sukses!';
-          history.replaceState({}, '', window.location.pathname); // hapus code dari URL
-        } else {
-          showError(data.error || 'Gagal tukar token');
-        }
-      } catch(err) {
-        showError(err.message);
+      const data = await res.json();
+      if (data.access_token) {
+        sessionStorage.setItem('kick_token', data.access_token);
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('bot').style.display = 'block';
+        document.getElementById('status').textContent = 'Login sukses!';
+        history.replaceState({}, '', window.location.pathname);
+      } else {
+        showError(data.error || 'Gagal tukar token');
       }
+    } catch(err) {
+      showError(err.message);
     }
+  }
 
-    // =======================
-    // Start Bot (kirim pesan)
-    // =======================
-    async function startBot() {
-      const channel = document.getElementById('channel').value.trim();
-      const token = sessionStorage.getItem('kick_token');
-      if (!channel || !token) return showError('Login dulu!');
-      document.getElementById('status').textContent = 'Menghubungkan...';
-      try {
-        const res = await fetch(`https://kick.com/api/v2/messages/send/${channel}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            content: 'Bot aktif! Ketik !hello, !jam, atau !padang'
-          })
-        });
-        if (!res.ok) {
-          const errData = await res.json();
-          return showError(errData.message || 'Gagal kirim pesan');
-        }
-        document.getElementById('status').textContent = 'Bot aktif di channel ' + channel;
-      } catch(err) {
-        showError(err.message);
+  // =======================
+  // Start Bot (kirim pesan)
+  // =======================
+  async function startBot() {
+    const channel = document.getElementById('channel').value.trim();
+    const token = sessionStorage.getItem('kick_token');
+    if (!channel || !token) return showError('Login dulu!');
+    document.getElementById('status').textContent = 'Menghubungkan...';
+    try {
+      const res = await fetch(`https://kick.com/api/v2/messages/send/${channel}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: 'Bot aktif! Ketik !hello, !jam, atau !padang'
+        })
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        return showError(errData.message || 'Gagal kirim pesan');
       }
+      document.getElementById('status').textContent = 'Bot aktif di channel ' + channel;
+    } catch(err) {
+      showError(err.message);
     }
+  }
 
-    // =======================
-    // Helper
-    // =======================
-    function showError(msg){
-      const e = document.getElementById('error');
-      e.textContent = msg;
-      e.style.display='block';
-      setTimeout(()=>e.style.display='none',5000);
-    }
+  // =======================
+  // Helper
+  // =======================
+  function showError(msg){
+    const e = document.getElementById('error');
+    e.textContent = msg;
+    e.style.display='block';
+    setTimeout(()=>e.style.display='none',5000);
+  }
 
-    // =======================
-    // Cek redirect balik dari OAuth
-    // =======================
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    if(code) exchangeToken(code);
-  </script>
+  // =======================
+  // Cek redirect balik dari OAuth
+  // =======================
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  if(code) exchangeToken(code);
+
+</script>
 </body>
 </html>
