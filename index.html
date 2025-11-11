@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kick Bot Padang</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 30px; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    h1 { text-align: center; margin-bottom: 10px; font-size: 28px; }
+    p { text-align: center; margin-bottom: 20px; opacity: 0.9; }
+    input, button { width: 100%; padding: 14px; margin: 10px 0; border: none; border-radius: 12px; font-size: 16px; }
+    input { background: rgba(255,255,255,0.2); color: white; }
+    input::placeholder { color: rgba(255,255,255,0.7); }
+    button { background: #00d26a; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    button:hover { background: #00b359; }
+    .status { text-align: center; margin-top: 15px; font-size: 14px; opacity: 0.8; }
+    .error { color: #ff6b6b; background: rgba(255,107,107,0.1); padding: 10px; border-radius: 8px; margin: 10px 0; text-align: center; }
+    .commands { margin-top: 20px; font-size: 13px; text-align: center; }
+    .commands code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Kick Bot Padang</h1>
+    <p>Bot chat test dari Sumatera Barat</p>
+
+    <div id="login">
+      <button onclick="login()">Login dengan Kick</button>
+    </div>
+
+    <div id="bot" style="display:none;">
+      <input type="text" id="channel" placeholder="Masukkan channel kamu" />
+      <button onclick="startBot()">Start Bot</button>
+      <div class="status" id="status">Siap...</div>
+      <div class="commands">
+        Command: <code>!hello</code> | <code>!jam</code> | <code>!padang</code>
+      </div>
+    </div>
+
+    <div id="error" class="error" style="display:none;"></div>
+  </div>
+
+  <script>
+    // Load .env
+    let ENV = {};
+    fetch('/.env')
+      .then(r => r.text())
+      .then(text => {
+        text.split('\n').forEach(line => {
+          if (line.includes('=')) {
+            const [k, v] = line.split('=');
+            ENV[k.trim()] = v.trim();
+          }
+        });
+        console.log('ENV loaded:', ENV);
+      });
+
+    function login() {
+      setTimeout(() => {
+        const CLIENT_ID = ENV.VITE_KICK_CLIENT_ID;
+        const REDIRECT_URI = ENV.VITE_KICK_REDIRECT_URI || window.location.origin + '/index.html';
+        if (!CLIENT_ID || CLIENT_ID.includes('masukkan')) return showError('Isi Client ID di .env!');
+
+        const params = new URLSearchParams({
+          client_id: CLIENT_ID,
+          redirect_uri: REDIRECT_URI,
+          response_type: 'code',
+          scope: 'chat:read chat:write',
+          state: 'test-bot',
+        });
+        window.location.href = `https://kick.com/oauth/authorize?${params.toString()}`;
+      }, 300);
+    }
+
+    async function exchangeToken(code) {
+      const res = await fetch(`/api/token?code=${code}`);
+      const data = await res.json();
+      if (data.access_token) {
+        sessionStorage.setItem('kick_token', data.access_token);
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('bot').style.display = 'block';
+        document.getElementById('status').textContent = 'Login sukses!';
+        history.replaceState({}, '', '/');
+      } else {
+        showError(data.error || 'Gagal tukar token');
+      }
+    }
+
+    async function startBot() {
+      const channel = document.getElementById('channel').value.trim();
+      const token = sessionStorage.getItem('kick_token');
+      if (!channel || !token) return showError('Login dulu!');
+
+      document.getElementById('status').textContent = 'Menghubungkan...';
+      const res = await fetch('/api/bot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel, token })
+      });
+      const data = await res.json();
+      document.getElementById('status').textContent = data.message || 'Bot aktif!';
+    }
+
+    function showError(msg) {
+      const e = document.getElementById('error');
+      e.textContent = msg;
+      e.style.display = 'block';
+      setTimeout(() => e.style.display = 'none', 5000);
+    }
+
+    // Cek redirect balik
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) exchangeToken(code);
+  </script>
+</body>
+</html>
