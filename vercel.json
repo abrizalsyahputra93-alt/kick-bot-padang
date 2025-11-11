@@ -2,6 +2,15 @@
   "functions": {
     "api/*.js": {
       "runtime": "nodejs18.x"
+    },
+    "api/*.ts": {
+      "runtime": "nodejs18.x"
+    },
+    "api/*.php": {
+      "runtime": "now-php@1.0.0"
+    },
+    "api/*.py": {
+      "runtime": "python3.11"
     }
   }
 }
