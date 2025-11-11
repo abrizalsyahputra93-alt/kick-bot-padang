@@ -43,9 +43,16 @@
   </div>
 
   <script>
-    const CLIENT_ID = import.meta.env.VITE_KICK_CLIENT_ID;
-    const REDIRECT_URI = import.meta.env.VITE_KICK_REDIRECT_URI;
+    // =======================
+    // CONFIGURATION
+    // =======================
+    const CLIENT_ID = "01K9SEDGKEAB4KH7WAJ8Q2XGVD"; // Masukkan Client ID
+    const CLIENT_SECRET = "8fe491a2b6fe3949673e9228d824efb477a90de7425c8b8f8a564ecb039a2225"; // Masukkan Client Secret
+    const REDIRECT_URI = window.location.origin + window.location.pathname; // Bisa pakai halaman ini
 
+    // =======================
+    // Login OAuth
+    // =======================
     function login() {
       if (!CLIENT_ID) return showError('Client ID belum diatur!');
       const params = new URLSearchParams({
@@ -53,47 +60,74 @@
         redirect_uri: REDIRECT_URI,
         response_type: 'code',
         scope: 'chat:read chat:write',
-        state: 'test-bot',
+        state: 'all-in-one-bot',
       });
       window.location.href = `https://kick.com/oauth/authorize?${params.toString()}`;
     }
 
+    // =======================
+    // Tukar code -> token
+    // =======================
     async function exchangeToken(code) {
       try {
-        const res = await fetch(`/api/token?code=${code}`);
+        const res = await fetch('https://kick.com/oauth/token', {
+          method: 'POST',
+          headers: {'Content-Type':'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({
+            client_id: CLIENT_ID,
+            client_secret: CLIENT_SECRET,
+            code: code,
+            grant_type: 'authorization_code',
+            redirect_uri: REDIRECT_URI
+          })
+        });
         const data = await res.json();
         if (data.access_token) {
           sessionStorage.setItem('kick_token', data.access_token);
           document.getElementById('login').style.display = 'none';
           document.getElementById('bot').style.display = 'block';
           document.getElementById('status').textContent = 'Login sukses!';
-          history.replaceState({}, '', '/');
+          history.replaceState({}, '', window.location.pathname); // hapus code dari URL
         } else {
           showError(data.error || 'Gagal tukar token');
         }
-      } catch (err) {
+      } catch(err) {
         showError(err.message);
       }
     }
 
+    // =======================
+    // Start Bot (kirim pesan)
+    // =======================
     async function startBot() {
       const channel = document.getElementById('channel').value.trim();
       const token = sessionStorage.getItem('kick_token');
       if (!channel || !token) return showError('Login dulu!');
       document.getElementById('status').textContent = 'Menghubungkan...';
       try {
-        const res = await fetch('/api/bot', {
+        const res = await fetch(`https://kick.com/api/v2/messages/send/${channel}`, {
           method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({channel, token})
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content: 'Bot aktif! Ketik !hello, !jam, atau !padang'
+          })
         });
-        const data = await res.json();
-        document.getElementById('status').textContent = data.message || 'Bot aktif!';
-      } catch(err){
+        if (!res.ok) {
+          const errData = await res.json();
+          return showError(errData.message || 'Gagal kirim pesan');
+        }
+        document.getElementById('status').textContent = 'Bot aktif di channel ' + channel;
+      } catch(err) {
         showError(err.message);
       }
     }
 
+    // =======================
+    // Helper
+    // =======================
     function showError(msg){
       const e = document.getElementById('error');
       e.textContent = msg;
@@ -101,6 +135,9 @@
       setTimeout(()=>e.style.display='none',5000);
     }
 
+    // =======================
+    // Cek redirect balik dari OAuth
+    // =======================
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     if(code) exchangeToken(code);
